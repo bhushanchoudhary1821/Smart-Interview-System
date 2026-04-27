@@ -9,38 +9,45 @@ import com.smartinterview.util.JwtUtil;
 
 public class JwtFilter implements Filter {
 
-    @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-            throws IOException, ServletException {
+	@Override
+	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+			throws IOException, ServletException {
 
-        HttpServletRequest req = (HttpServletRequest) request;
+		HttpServletRequest req = (HttpServletRequest) request;
 
-        // ✅ PUT HERE (TOP)
-        if (req.getRequestURI().contains("/api/auth/login")) {
-            chain.doFilter(request, response);
-            return;
-        }
+		String path = req.getRequestURI();
 
-        String authHeader = req.getHeader("Authorization");
+		if (path.startsWith("/api/auth") ||
+			path.startsWith("/api/users") ||   
+		    path.startsWith("/v3/api-docs") ||
+		    path.startsWith("/swagger-ui") ||
+		    path.startsWith("/swagger-resources") ||
+		    path.startsWith("/webjars")) {
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            HttpServletResponse res = (HttpServletResponse) response;
-            res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            res.getWriter().write("Token Missing or Invalid");
-            return;
-        }
+		    chain.doFilter(request, response);
+		    return;
+		}
+		String authHeader = req.getHeader("Authorization");
 
-        String token = authHeader.substring(7);
+		if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+			HttpServletResponse res = (HttpServletResponse) response;
+			res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+			res.getWriter().write("Token Missing or Invalid");
+			return;
+		}
 
-        try {
-            String email = JwtUtil.extractEmail(token);
-        } catch (Exception e) {
-            HttpServletResponse res = (HttpServletResponse) response;
-            res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            res.getWriter().write("Invalid Token");
-            return;
-        }
+		String token = authHeader.substring(7);
 
-        chain.doFilter(request, response);
-    }
+		try {
+			@SuppressWarnings("unused")
+			String email = JwtUtil.extractEmail(token);
+		} catch (Exception e) {
+			HttpServletResponse res = (HttpServletResponse) response;
+			res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+			res.getWriter().write("Invalid Token");
+			return;
+		}
+
+		chain.doFilter(request, response);
+	}
 }
